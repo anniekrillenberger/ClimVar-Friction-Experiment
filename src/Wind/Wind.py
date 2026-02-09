@@ -332,7 +332,6 @@ def create_wind_difference_plot(fileName_u_ref, fileName_v_ref,
     dsv_exp.close()
 
 
-'''
 create_wind_vector_plot('code_131-ref15',       'code_132-ref15',       'Reference (LEV = 15)',        85000, 15)
 create_wind_vector_plot('code_131-lessfric15',  'code_132-lessfric15',  'Less Friction (LEV = 15)',    85000, 15)
 create_wind_vector_plot('code_131-morefric15',  'code_132-morefric15',  'More Friction (LEV = 15)',    85000, 15)
@@ -342,14 +341,12 @@ create_wind_vector_plot('code_131-morefric5',   'code_132-morefric5',   'More Fr
 create_wind_vector_plot('code_131-morefric10',  'code_132-morefric10',  'More Friction (LEV = 10)',    85000, 10)
 create_wind_vector_plot('code_131-ref5',        'code_132-ref5',        'Reference (LEV = 5)',         85000, 5)
 create_wind_vector_plot('code_131-ref10',       'code_132-ref10',       'Reference (LEV = 10)',        85000, 10)
-'''
 
 create_wind_difference_plot('code_131-ref15', 'code_132-ref15', 'code_131-lessfric15', 'code_132-lessfric15',
                             'Less Friction Difference', 85000, 15)
 create_wind_difference_plot('code_131-ref15', 'code_132-ref15', 'code_131-morefric15', 'code_132-morefric15',
                             'More Friction Difference', 85000, 15)
 
-'''
 create_eastward_wind_graph('code_131-ref15', 'code_131-lessfric15', 'code_131-morefric15',
                             'Reference', 'Less Friction', 'More Friction', 15, 50000, 6.5)
 create_eastward_wind_graph('code_131-ref15', 'code_131-lessfric15', 'code_131-morefric15',
@@ -391,4 +388,3 @@ create_northward_wind_graph('code_132-ref10', 'code_132-lessfric10', 'code_132-m
                             'Reference', 'Less Friction', 'More Friction', 10, 85000, -0.2)
 create_northward_wind_graph('code_132-ref10', 'code_132-lessfric10', 'code_132-morefric10',
                             'Reference', 'Less Friction', 'More Friction', 10, 100000, -1)
-'''
