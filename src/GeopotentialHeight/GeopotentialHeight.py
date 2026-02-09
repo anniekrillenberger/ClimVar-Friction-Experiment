@@ -30,8 +30,9 @@ def create_geopotential_height_map(fileName, experimentName, pressureLevel):
     # plot!
     plt.figure()
     ax = plt.axes(projection=ccrs.PlateCarree())
-    contour = ax.contourf(zg_at_level.lon, zg_at_level.lat, zg_at_level, 
-                        levels=20, cmap='RdYlBu_r', transform=ccrs.PlateCarree())
+    levels = np.arange(60, 135, 1)
+    contour = ax.contourf(zg_at_level.lon, zg_at_level.lat, zg_at_level, vmin=60, vmax=135,
+                          levels=levels, cmap='RdYlBu_r', transform=ccrs.PlateCarree())
     ax.coastlines(linewidth=0.5)
     ax.add_feature(cfeature.BORDERS, linestyle=':', linewidth=0.3)
     gl = ax.gridlines(draw_labels=True, dms=False, x_inline=False, y_inline=False,
@@ -116,15 +117,15 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     print()
     return
 
-create_geopotential_height_map('code_156-lessfric5',  'Less Friction: LEV = 5',   50000)
-create_geopotential_height_map('code_156-lessfric10', 'Less Friction: LEV = 10',  50000)
-create_geopotential_height_map('code_156-lessfric15', 'Less Friction: LEV = 15',  50000)
-create_geopotential_height_map('code_156-morefric5',  'More Friction: LEV = 5',   50000)
-create_geopotential_height_map('code_156-morefric10', 'More Friction: LEV = 10',  50000)
-create_geopotential_height_map('code_156-morefric15', 'More Friction: LEV = 15',  50000)
-create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',       50000)
-create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      50000)
-create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      50000)
+create_geopotential_height_map('code_156-lessfric5',  'Less Friction: LEV = 5',   100000)
+create_geopotential_height_map('code_156-lessfric10', 'Less Friction: LEV = 10',  100000)
+create_geopotential_height_map('code_156-lessfric15', 'Less Friction: LEV = 15',  100000)
+create_geopotential_height_map('code_156-morefric5',  'More Friction: LEV = 5',   100000)
+create_geopotential_height_map('code_156-morefric10', 'More Friction: LEV = 10',  100000)
+create_geopotential_height_map('code_156-morefric15', 'More Friction: LEV = 15',  100000)
+create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',       100000)
+create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      100000)
+create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      100000)
 
 create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
                                  'Reference', 'Less Friction', 'More Friction', 15, 50000, 5470)
