@@ -187,6 +187,8 @@ create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',     
 create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      100000)
 create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      100000)
 
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 50000, 15)
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 50000, 15)
 create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 100000, 15)
 create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 100000, 15)
 
