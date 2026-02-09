@@ -2,6 +2,7 @@
 
 import xarray as xr
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import numpy as np
@@ -53,6 +54,68 @@ def create_air_temperature_map(fileName, experimentName, pressureLevel):
     plt.show()
 
     return
+
+def create_air_temperature_difference_map(refFile, expFile, title, pressureLevel, ymin, ymax, lev):
+    time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+
+    dsRef = xr.open_dataset(refFile, engine='netcdf4', decode_times=time_coder)
+    dsExp = xr.open_dataset(expFile, engine='netcdf4', decode_times=time_coder)
+
+    taRef = dsRef['ta']
+    taExp = dsExp['ta']
+
+    # Time mean
+    taRef_mean = taRef.mean(dim='time')
+    taExp_mean = taExp.mean(dim='time')
+
+    # Select pressure level
+    taRef_at_level = taRef_mean.sel(lev=pressureLevel, method='nearest')
+    taExp_at_level = taExp_mean.sel(lev=pressureLevel, method='nearest')
+
+    # Difference: experiment - reference
+    ta_diff = taExp_at_level - taRef_at_level
+    levels = np.linspace(ymin, ymax, 50)
+
+    print("Min Z:", float(ta_diff.min()))
+    print("Max Z:", float(ta_diff.max()))
+
+    # Plot
+    plt.figure(figsize=(8, 5))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+
+    contour = ax.contourf(
+        ta_diff.lon, ta_diff.lat, ta_diff,
+        vmin=ymin, vmax = ymax,
+        levels=levels,
+        cmap='RdBu_r',
+        extend='both',
+        transform=ccrs.PlateCarree()
+    )
+
+    ax.coastlines(linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linestyle=':', linewidth=0.3)
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5, color='gray',
+                      alpha=0.5, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
+
+    cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
+                        pad=0.05, shrink=0.8)
+    cbar.locator = mticker.MaxNLocator(nbins=6, prune=None)
+    cbar.update_ticks()
+    cbar.set_label('Δ Air Temperature [K]', fontsize=11)
+
+    plt.title(f'{title} (LEV = {lev}): Δta at {pressureLevel/100:.0f} hPa',
+              fontsize=14, fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig(f'diff_{expFile}_{refFile}_{pressureLevel/100:.0f}hPa.png',
+                dpi=300, bbox_inches='tight')
+    plt.show()
+
+    dsRef.close()
+    dsExp.close()
+
 
 def create_air_temperature_graph(file1, file2, file3, label1, label2, label3, lev, 
                                      pressureLevel, ymax, totalYears=15):
@@ -120,6 +183,7 @@ def create_air_temperature_graph(file1, file2, file3, label1, label2, label3, le
     print()
     return
 
+
 create_air_temperature_map('code_130-lessfric5',  'Less Friction: LEV = 5',   50000)
 create_air_temperature_map('code_130-lessfric10', 'Less Friction: LEV = 10',  50000)
 create_air_temperature_map('code_130-lessfric15', 'Less Friction: LEV = 15',  50000)
@@ -130,6 +194,10 @@ create_air_temperature_map('code_130-ref5',       'Reference: LEV = 5',       50
 create_air_temperature_map('code_130-ref10',      'Reference: LEV = 10',      50000)
 create_air_temperature_map('code_130-ref15',      'Reference: LEV = 15',      50000)
 
+create_air_temperature_difference_map('code_130-ref15', 'code_130-morefric15', 'More Friction Difference', 50000, 3, 10, 15)
+create_air_temperature_difference_map('code_130-ref15', 'code_130-lessfric15', 'Less Friction Difference', 50000, -0.3, 0.3, 15)
+create_air_temperature_difference_map('code_130-ref15', 'code_130-morefric15', 'More Friction Difference', 100000, -5, 5, 15)
+create_air_temperature_difference_map('code_130-ref15', 'code_130-lessfric15', 'Less Friction Difference', 100000, -0.4, 0.4, 15)
 
 create_air_temperature_graph('code_130-ref15', 'code_130-lessfric15', 'code_130-morefric15',
                              'Reference', 'Less Friction', 'More Friction', 15, 50000, 256)

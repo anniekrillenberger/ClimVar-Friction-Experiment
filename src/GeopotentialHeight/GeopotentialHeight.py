@@ -70,8 +70,6 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
     # Difference: experiment - reference
     zg_diff = zgExp_at_level - zgRef_at_level
 
-    # Symmetric color range around 0
-    # max_abs = np.nanmax(np.abs(zg_diff.values))
     vmin = float(zg_diff.min())
     vmax = float(zg_diff.max())
     levels = np.linspace(vmin, vmax, 50)
@@ -178,7 +176,6 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     print()
     return
 
-'''
 create_geopotential_height_map('code_156-lessfric5',  'Less Friction: LEV = 5',   100000)
 create_geopotential_height_map('code_156-lessfric10', 'Less Friction: LEV = 10',  100000)
 create_geopotential_height_map('code_156-lessfric15', 'Less Friction: LEV = 15',  100000)
@@ -189,6 +186,8 @@ create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',     
 create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      100000)
 create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      100000)
 
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 50000, 15)
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 50000, 15)
 create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 100000, 15)
 create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 100000, 15)
 
@@ -198,8 +197,3 @@ create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_
                                  'Reference', 'Less Friction', 'More Friction', 15, 85000, 1410)
 create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
                                  'Reference', 'Less Friction', 'More Friction', 15, 100000, 105)
-                                 '''
-
-
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 50000, 15)
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 50000, 15)
