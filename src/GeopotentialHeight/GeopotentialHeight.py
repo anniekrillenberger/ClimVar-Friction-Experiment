@@ -49,7 +49,66 @@ def create_geopotential_height_map(fileName, experimentName, pressureLevel):
             dpi=300, bbox_inches='tight')
     plt.show()
 
-    return
+
+def create_geopotential_height_difference_map(refFile, expFile, title, pressureLevel, lev):
+    time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+
+    dsRef = xr.open_dataset(refFile, engine='netcdf4', decode_times=time_coder)
+    dsExp = xr.open_dataset(expFile, engine='netcdf4', decode_times=time_coder)
+
+    zgRef = dsRef['zg']
+    zgExp = dsExp['zg']
+
+    # Time mean
+    zgRef_mean = zgRef.mean(dim='time')
+    zgExp_mean = zgExp.mean(dim='time')
+
+    # Select pressure level
+    zgRef_at_level = zgRef_mean.sel(lev=pressureLevel, method='nearest')
+    zgExp_at_level = zgExp_mean.sel(lev=pressureLevel, method='nearest')
+
+    # Difference: experiment - reference
+    zg_diff = zgExp_at_level - zgRef_at_level
+
+    # Symmetric color range around 0
+    max_abs = np.nanmax(np.abs(zg_diff.values))
+    levels = np.linspace(-max_abs, max_abs, 21)
+
+    # Plot
+    plt.figure(figsize=(8, 5))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+
+    contour = ax.contourf(
+        zg_diff.lon, zg_diff.lat, zg_diff,
+        levels=levels,
+        cmap='RdBu_r',
+        extend='both',
+        transform=ccrs.PlateCarree()
+    )
+
+    ax.coastlines(linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linestyle=':', linewidth=0.3)
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5, color='gray',
+                      alpha=0.5, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
+
+    cbar = plt.colorbar(contour, ax=ax, orientation='horizontal',
+                        pad=0.05, shrink=0.8)
+    cbar.set_label('Δ Geopotential Height [m]', fontsize=11)
+
+    plt.title(f'{title} (LEV = {lev}): Δzg at {pressureLevel/100:.0f} hPa',
+              fontsize=14, fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig(f'diff_{expFile}_{refFile}_{pressureLevel/100:.0f}hPa.png',
+                dpi=300, bbox_inches='tight')
+    plt.show()
+
+    dsRef.close()
+    dsExp.close()
+
+
 
 def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3, lev, 
                                      pressureLevel, ymax, totalYears=15):
@@ -117,6 +176,7 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     print()
     return
 
+
 create_geopotential_height_map('code_156-lessfric5',  'Less Friction: LEV = 5',   100000)
 create_geopotential_height_map('code_156-lessfric10', 'Less Friction: LEV = 10',  100000)
 create_geopotential_height_map('code_156-lessfric15', 'Less Friction: LEV = 15',  100000)
@@ -126,6 +186,9 @@ create_geopotential_height_map('code_156-morefric15', 'More Friction: LEV = 15',
 create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',       100000)
 create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      100000)
 create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      100000)
+
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 100000, 15)
+create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 100000, 15)
 
 create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
                                  'Reference', 'Less Friction', 'More Friction', 15, 50000, 5470)
