@@ -209,7 +209,7 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     print()
     return
 
-'''
+
 create_geopotential_height_map('code_156-DVDIFF0',  0,  50000)
 create_geopotential_height_map('code_156-DVDIFF5',  5,  50000)
 create_geopotential_height_map('code_156-DVDIFF10', 10, 50000)
@@ -220,11 +220,9 @@ create_geopotential_height_map('code_156-DVDIFF0',  0,  100000)
 create_geopotential_height_map('code_156-DVDIFF5',  5,  100000)
 create_geopotential_height_map('code_156-DVDIFF10', 10, 100000)
 
-
 create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 50000,   10)
 create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 85000,   10)
 create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 100000,  10)
-'''
 
 create_geopotential_height_graph('code_156-DVDIFF0', 'code_156-DVDIFF5', 'code_156-DVDIFF10', '0 m\u00b2/s', '5 m\u00b2/s', '10 m\u00b2/s', 5590, 50000)
 create_geopotential_height_graph('code_156-DVDIFF0', 'code_156-DVDIFF5', 'code_156-DVDIFF10', '0 m\u00b2/s', '5 m\u00b2/s', '10 m\u00b2/s', 1445, 85000)
