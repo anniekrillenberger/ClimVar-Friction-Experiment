@@ -188,7 +188,7 @@ def create_air_temperature_graph(file1, file2, file3, label1, label2, label3, ym
     plt.title(f'Air Temperature Time Evolution at {pressureLevel/100:.0f} hPa', 
                 fontsize=15, fontweight='bold')
     plt.grid(True, alpha=0.3, linestyle='--')
-    plt.legend(fontsize=11, loc='best')
+    plt.legend(fontsize=11, loc='best', title='Vertical Diffusion Coefficient')
     plt.ylim(top=ymax)
     plt.tight_layout()
     plt.savefig(f'ta_comparison_{pressureLevel/100:.0f}hPa_LEV.png', dpi=300)

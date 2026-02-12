@@ -183,7 +183,7 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     plt.title(f'Geopotential Height Time Evolution at {pressureLevel/100:.0f} hPa', 
                 fontsize=15, fontweight='bold')
     plt.grid(True, alpha=0.3, linestyle='--')
-    plt.legend(fontsize=11, loc='best')
+    plt.legend(fontsize=11, loc='best', title='Vertical Diffusion Coefficient')
     plt.ylim(top=ymax)
     plt.tight_layout()
     plt.savefig(f'zg_comparison_{pressureLevel/100:.0f}hPa.png', dpi=300)
