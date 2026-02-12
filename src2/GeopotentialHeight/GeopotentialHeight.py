@@ -8,7 +8,7 @@ import cartopy.feature as cfeature
 import numpy as np
 
 
-def create_geopotential_height_map(fileName, experimentName, pressureLevel):
+def create_geopotential_height_map(fileName, dvdiff, pressureLevel):
     # load data from netCDF file
     time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
     ds = xr.open_dataset(fileName, engine='netcdf4', decode_times=time_coder)
@@ -23,27 +23,44 @@ def create_geopotential_height_map(fileName, experimentName, pressureLevel):
     print(f"Spatial resolution: {len(zg.lat)} lat x {len(zg.lon)} lon")
     print("="*60 + "\n")
 
+    # Exclude first year (spinup) - assuming 360 time steps per year
+    # Adjust this number based on your actual temporal resolution
+    steps_per_year = len(zg.time) // 15  # Total steps / 15 years
+    spinup_steps = steps_per_year  # First year
+    zg_no_spinup = zg.isel(time=slice(spinup_steps, None))
+
     # calculate the average across all 5400 time steps for each combination of (lev, lat, lon)
-    zg_mean = zg.mean(dim='time')
+    zg_mean = zg_no_spinup.mean(dim='time')
     # select a single pressure level 
     zg_at_level = zg_mean.sel(lev=pressureLevel, method='nearest')
+
+    def levels():
+        match pressureLevel:
+            case 50000:
+                return np.arange(5000, 6000, 20)
+            case 85000:
+                return np.arange(1300, 1510, 2)
+            case 100000:
+                return np.arange(45, 175, 1)
+            case _:
+                return np.arange(zg_at_level.min().values, zg_at_level.max().values, 20)
 
     # plot!
     plt.figure()
     ax = plt.axes(projection=ccrs.PlateCarree())
-    levels = np.arange(60, 135, 1)
-    contour = ax.contourf(zg_at_level.lon, zg_at_level.lat, zg_at_level, vmin=60, vmax=135,
-                          levels=levels, cmap='RdYlBu_r', transform=ccrs.PlateCarree())
+    contour = ax.contourf(zg_at_level.lon, zg_at_level.lat, zg_at_level, levels=levels(), 
+                          cmap='RdYlBu_r', transform=ccrs.PlateCarree())
     ax.coastlines(linewidth=0.5)
     ax.add_feature(cfeature.BORDERS, linestyle=':', linewidth=0.3)
     gl = ax.gridlines(draw_labels=True, dms=False, x_inline=False, y_inline=False,
                     linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
     gl.top_labels = False
     gl.right_labels = False
-    cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', 
-                        pad=0.05, shrink=0.8)
+    cbar = plt.colorbar(contour, ax=ax, orientation='horizontal', pad=0.05, shrink=0.8)
+    cbar.locator = mticker.MaxNLocator(nbins=6, prune=None)
+    cbar.update_ticks()
     cbar.set_label('Geopotential Height [m]', fontsize=11)
-    plt.title(f'{experimentName}: Time-averaged Geopotential Height at {pressureLevel/100:.0f} hPa', 
+    plt.title(f'Vertical Diffusion Coefficient = {dvdiff} m\u00b2/s: Time-averaged Geopotential Height at {pressureLevel/100:.0f} hPa', 
             fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.savefig(f'{fileName}_zg_contour_{pressureLevel/100:.0f}hPa.png', 
@@ -51,7 +68,7 @@ def create_geopotential_height_map(fileName, experimentName, pressureLevel):
     plt.show()
 
 
-def create_geopotential_height_difference_map(refFile, expFile, title, pressureLevel, lev):
+def create_geopotential_height_difference_map(refFile, expFile, pressureLevel, dvdiff):
     time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
 
     dsRef = xr.open_dataset(refFile, engine='netcdf4', decode_times=time_coder)
@@ -60,9 +77,17 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
     zgRef = dsRef['zg']
     zgExp = dsExp['zg']
 
+    # exclude 1st year (spinup) - assuming 360 time steps per year
+    n_years_total = 15  # your experiment length
+    steps_per_year_ref = len(zgRef.time) // n_years_total
+    steps_per_year_exp = len(zgExp.time) // n_years_total
+
+    zgRef_no_spinup = zgRef.isel(time=slice(steps_per_year_ref, None))
+    zgExp_no_spinup = zgExp.isel(time=slice(steps_per_year_exp, None))
+
     # Time mean
-    zgRef_mean = zgRef.mean(dim='time')
-    zgExp_mean = zgExp.mean(dim='time')
+    zgRef_mean = zgRef_no_spinup.mean(dim='time')
+    zgExp_mean = zgExp_no_spinup.mean(dim='time')
 
     # Select pressure level
     zgRef_at_level = zgRef_mean.sel(lev=pressureLevel, method='nearest')
@@ -71,12 +96,16 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
     # Difference: experiment - reference
     zg_diff = zgExp_at_level - zgRef_at_level
 
-    print("Min Z:", float(zg_diff.min()))
-    print("Max Z:", float(zg_diff.max()))
-
-    vmin = float(zg_diff.min())
-    vmax = float(zg_diff.max())
-    levels = np.linspace(vmin, vmax, 100)
+    def levels():
+        match pressureLevel:
+            case 50000:
+                return np.arange(-26, 26, 0.5)
+            case 85000:
+                return np.arange(-38, 0, 0.5)
+            case 100000:
+                return np.arange(-23, 23, 0.5)
+            case _:
+                return np.arange(zg_diff.min().values, zg_diff.max().values, 0.5)
 
     # Plot
     plt.figure(figsize=(8, 5))
@@ -84,7 +113,7 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
 
     contour = ax.contourf(
         zg_diff.lon, zg_diff.lat, zg_diff,
-        levels=levels,
+        levels=levels(),
         cmap='RdBu_r',
         extend='both',
         transform=ccrs.PlateCarree()
@@ -103,7 +132,7 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
     cbar.update_ticks()
     cbar.set_label('Δ Geopotential Height [m]', fontsize=11)
 
-    plt.title(f'{title} (LEV = {lev}): Δzg at {pressureLevel/100:.0f} hPa',
+    plt.title(f'Difference Between {dvdiff} & 0 m\u00b2/s: Δzg at {pressureLevel/100:.0f} hPa',
               fontsize=14, fontweight='bold')
 
     plt.tight_layout()
@@ -115,9 +144,7 @@ def create_geopotential_height_difference_map(refFile, expFile, title, pressureL
     dsExp.close()
 
 
-
-def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3, lev, 
-                                     pressureLevel, ymax, totalYears=15):
+def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3, ymax, pressureLevel, totalYears=15):
     plt.figure(figsize=(14, 6))
     
     files = [file1, file2, file3]
@@ -153,13 +180,13 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     # Formatting
     plt.xlabel('Time [years]', fontsize=13)
     plt.ylabel('Global Mean Geopotential Height [m]', fontsize=13)
-    plt.title(f'Geopotential Height Time Evolution at {pressureLevel/100:.0f} hPa, LEV = {lev}', 
+    plt.title(f'Geopotential Height Time Evolution at {pressureLevel/100:.0f} hPa', 
                 fontsize=15, fontweight='bold')
     plt.grid(True, alpha=0.3, linestyle='--')
     plt.legend(fontsize=11, loc='best')
     plt.ylim(top=ymax)
     plt.tight_layout()
-    plt.savefig(f'zg_comparison_{pressureLevel/100:.0f}hPa_LEV{lev}.png', dpi=300)
+    plt.savefig(f'zg_comparison_{pressureLevel/100:.0f}hPa.png', dpi=300)
     plt.show()
     
     # Print detailed statistics
@@ -183,27 +210,22 @@ def create_geopotential_height_graph(file1, file2, file3, label1, label2, label3
     return
 
 '''
-create_geopotential_height_map('code_156-lessfric5',  'Less Friction: LEV = 5',   100000)
-create_geopotential_height_map('code_156-lessfric10', 'Less Friction: LEV = 10',  100000)
-create_geopotential_height_map('code_156-lessfric15', 'Less Friction: LEV = 15',  100000)
-create_geopotential_height_map('code_156-morefric5',  'More Friction: LEV = 5',   100000)
-create_geopotential_height_map('code_156-morefric10', 'More Friction: LEV = 10',  100000)
-create_geopotential_height_map('code_156-morefric15', 'More Friction: LEV = 15',  100000)
-create_geopotential_height_map('code_156-ref5',       'Reference: LEV = 5',       100000)
-create_geopotential_height_map('code_156-ref10',      'Reference: LEV = 10',      100000)
-create_geopotential_height_map('code_156-ref15',      'Reference: LEV = 15',      100000)
+create_geopotential_height_map('code_156-DVDIFF0',  0,  50000)
+create_geopotential_height_map('code_156-DVDIFF5',  5,  50000)
+create_geopotential_height_map('code_156-DVDIFF10', 10, 50000)
+create_geopotential_height_map('code_156-DVDIFF0',  0,  85000)
+create_geopotential_height_map('code_156-DVDIFF5',  5,  85000)
+create_geopotential_height_map('code_156-DVDIFF10', 10, 85000)
+create_geopotential_height_map('code_156-DVDIFF0',  0,  100000)
+create_geopotential_height_map('code_156-DVDIFF5',  5,  100000)
+create_geopotential_height_map('code_156-DVDIFF10', 10, 100000)
+
+
+create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 50000,   10)
+create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 85000,   10)
+create_geopotential_height_difference_map('code_156-DVDIFF0', 'code_156-DVDIFF10', 100000,  10)
 '''
 
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 50000, 15)
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 50000, 15)
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-morefric15', 'More Friction Difference', 100000, 15)
-create_geopotential_height_difference_map('code_156-ref15', 'code_156-lessfric15', 'Less Friction Difference', 100000, 15)
-
-'''
-create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
-                                 'Reference', 'Less Friction', 'More Friction', 15, 50000, 5470)
-create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
-                                 'Reference', 'Less Friction', 'More Friction', 15, 85000, 1410)
-create_geopotential_height_graph('code_156-ref15', 'code_156-lessfric15', 'code_156-morefric15',
-                                 'Reference', 'Less Friction', 'More Friction', 15, 100000, 105)
-                                 '''
+create_geopotential_height_graph('code_156-DVDIFF0', 'code_156-DVDIFF5', 'code_156-DVDIFF10', '0 m\u00b2/s', '5 m\u00b2/s', '10 m\u00b2/s', 5590, 50000)
+create_geopotential_height_graph('code_156-DVDIFF0', 'code_156-DVDIFF5', 'code_156-DVDIFF10', '0 m\u00b2/s', '5 m\u00b2/s', '10 m\u00b2/s', 1445, 85000)
+create_geopotential_height_graph('code_156-DVDIFF0', 'code_156-DVDIFF5', 'code_156-DVDIFF10', '0 m\u00b2/s', '5 m\u00b2/s', '10 m\u00b2/s', 126, 100000)
