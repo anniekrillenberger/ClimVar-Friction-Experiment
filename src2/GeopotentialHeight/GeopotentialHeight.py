@@ -96,16 +96,11 @@ def create_geopotential_height_difference_map(refFile, expFile, pressureLevel, d
     # Difference: experiment - reference
     zg_diff = zgExp_at_level - zgRef_at_level
 
-    def levels():
-        match pressureLevel:
-            case 50000:
-                return np.arange(-26, 26, 0.5)
-            case 85000:
-                return np.arange(-38, 0, 0.5)
-            case 100000:
-                return np.arange(-23, 23, 0.5)
-            case _:
-                return np.arange(zg_diff.min().values, zg_diff.max().values, 0.5)
+    # Symmetric color scale around 0
+    vmax = float(np.nanmax(np.abs(zg_diff.values)))
+    vmin = -vmax
+
+    levels = np.linspace(vmin, vmax, 75)
 
     # Plot
     plt.figure(figsize=(8, 5))
@@ -113,7 +108,7 @@ def create_geopotential_height_difference_map(refFile, expFile, pressureLevel, d
 
     contour = ax.contourf(
         zg_diff.lon, zg_diff.lat, zg_diff,
-        levels=levels(),
+        levels=levels,
         cmap='RdBu_r',
         extend='both',
         transform=ccrs.PlateCarree()

@@ -265,7 +265,7 @@ def create_wind_difference_plot(fileName_u_ref, fileName_v_ref, fileName_u_exp, 
     plt.figure(figsize=(18, 9))
     ax = plt.axes(projection=ccrs.PlateCarree())
 
-    # Symmetric levels around 0 for signed difference (optional alt below)
+    # Symmetric levels around 0 for signed difference
     vmax = np.nanmax(np.abs(diff_speed.values))
     levels = np.linspace(0, vmax, 15)
 

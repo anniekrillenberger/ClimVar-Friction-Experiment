@@ -100,25 +100,20 @@ def create_air_temperature_difference_map(refFile, expFile, pressureLevel, dvdif
 
     # Difference: experiment - reference
     ta_diff = taExp_at_level - taRef_at_level
-    
-    def levels():
-        match pressureLevel:
-            case 50000:
-                return np.arange(3, 7.5, 0.1)
-            case 85000:
-                return np.arange(-7, -2, 0.1)
-            case 100000:
-                return np.arange(-4.5, -2.5, 0.1)
-            case _:
-                return np.arange(ta_diff.min().values, ta_diff.max().values, 0.1)
 
+    # Symmetric color scale around 0
+    vmax = float(np.nanmax(np.abs(ta_diff.values)))
+    vmin = -vmax
+
+    levels = np.linspace(vmin, vmax, 75)
+                
     # Plot
     plt.figure(figsize=(8, 5))
     ax = plt.axes(projection=ccrs.PlateCarree())
 
     contour = ax.contourf(
         ta_diff.lon, ta_diff.lat, ta_diff,
-        levels=levels(),
+        levels=levels,
         cmap='RdBu_r',
         extend='both',
         transform=ccrs.PlateCarree()
